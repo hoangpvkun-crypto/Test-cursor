@@ -363,10 +363,14 @@ Public Sub DauNoi()
         FileCount = FileCount + 1
         
         ' Cap nhat tien trinh
+        Dim pct As String
+        pct = Format(i / DoNoCount, "0.00%")
         If Not wsEPLAN_EXPORT Is Nothing Then
-            wsEPLAN_EXPORT.Range("E2").Value = "Da xu ly " & Format(i / DoNoCount, "0.00%") & "..."
+            Application.ScreenUpdating = True
+            wsEPLAN_EXPORT.Range("E2").Value = "Da xu ly " & pct & "..."
+            Application.ScreenUpdating = False
         End If
-        Application.StatusBar = "Da xu ly " & Format(i / DoNoCount, "0.00%") & "..."
+        Application.StatusBar = "Da xu ly " & pct & "..."
         
 NextLoop:
         Set wsNewDN = Nothing
