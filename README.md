@@ -1,28 +1,26 @@
 # Test-cursor
 
-## Ứng dụng Quản lý công việc (To-Do List) CLI nâng cao
+## To-Do List Web App (HTML/CSS/JS thuần)
 
-Ứng dụng chạy trên Terminal nhưng có giao diện menu dạng “app”, hỗ trợ lưu dữ liệu tự động ra file JSON.
+Ứng dụng To-Do List chạy trực tiếp trên trình duyệt, thiết kế theo dạng card hiện đại, có lọc trạng thái và lưu dữ liệu bằng `localStorage`.
 
-### Chạy chương trình
+## Cách chạy
+
+Chỉ cần mở file `index.html` bằng trình duyệt.
+
+Hoặc chạy local server đơn giản:
 
 ```bash
-python3 todo_cli.py
+python3 -m http.server 8000
 ```
 
-### Chức năng chính
+Sau đó truy cập: `http://localhost:8000`
 
-- Thêm công việc mới (kèm mức ưu tiên).
-- Sửa nội dung và ưu tiên của công việc.
-- Đánh dấu công việc hoàn thành.
-- Xóa một công việc theo STT.
-- Xem toàn bộ danh sách với trạng thái rõ ràng.
-- Tìm kiếm công việc theo từ khóa.
-- Lọc danh sách theo trạng thái (đã/chưa hoàn thành).
-- Thống kê nhanh tổng số việc.
-- Xóa toàn bộ việc đã hoàn thành.
+## Tính năng
 
-### Lưu dữ liệu
-
-- Dữ liệu được lưu vào file: `todo_data.json`.
-- Khi chạy lại app, danh sách công việc vẫn còn.
+- Thêm công việc mới.
+- Đánh dấu hoàn thành / bỏ hoàn thành.
+- Xóa công việc.
+- Bộ lọc: Tất cả / Đã xong / Chưa xong.
+- Tự động lưu bằng `localStorage` (đóng/mở trình duyệt vẫn còn dữ liệu).
+- Giao diện sạch sẽ, nút rõ ràng, có hiệu ứng hover.
