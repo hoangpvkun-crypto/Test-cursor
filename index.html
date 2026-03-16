@@ -1,0 +1,329 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>To-Do List Web App</title>
+    <style>
+      :root {
+        --bg: #f5f7fb;
+        --card: #ffffff;
+        --text: #1f2937;
+        --muted: #6b7280;
+        --primary: #4f46e5;
+        --primary-hover: #4338ca;
+        --success: #10b981;
+        --danger: #ef4444;
+        --border: #e5e7eb;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        font-family: "Inter", "Segoe UI", Roboto, Arial, sans-serif;
+        background: linear-gradient(120deg, #eef2ff, #f8fafc);
+        min-height: 100vh;
+        display: grid;
+        place-items: center;
+        color: var(--text);
+      }
+
+      .app {
+        width: min(760px, 92vw);
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        box-shadow: 0 16px 40px rgba(17, 24, 39, 0.12);
+        padding: 24px;
+      }
+
+      h1 {
+        margin: 0 0 6px;
+        font-size: 1.8rem;
+      }
+
+      .sub {
+        margin: 0 0 20px;
+        color: var(--muted);
+      }
+
+      .add-row {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        gap: 10px;
+        margin-bottom: 14px;
+      }
+
+      input[type="text"] {
+        width: 100%;
+        padding: 12px 14px;
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        font-size: 1rem;
+      }
+
+      input[type="text"]:focus {
+        outline: none;
+        border-color: var(--primary);
+        box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.18);
+      }
+
+      button {
+        border: none;
+        border-radius: 10px;
+        padding: 10px 14px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: transform 0.12s ease, opacity 0.2s ease, background 0.2s ease;
+      }
+
+      button:hover {
+        transform: translateY(-1px);
+      }
+
+      .btn-primary {
+        background: var(--primary);
+        color: #fff;
+      }
+
+      .btn-primary:hover {
+        background: var(--primary-hover);
+      }
+
+      .filters {
+        display: flex;
+        gap: 8px;
+        margin-bottom: 16px;
+        flex-wrap: wrap;
+      }
+
+      .filter-btn {
+        background: #eef2ff;
+        color: #3730a3;
+      }
+
+      .filter-btn.active {
+        background: var(--primary);
+        color: white;
+      }
+
+      ul {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+      }
+
+      li {
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 12px;
+        display: grid;
+        grid-template-columns: 1fr auto;
+        gap: 10px;
+        align-items: center;
+        background: #fff;
+      }
+
+      li + li {
+        margin-top: 10px;
+      }
+
+      .task-text {
+        line-height: 1.4;
+      }
+
+      .task-text.completed {
+        text-decoration: line-through;
+        color: var(--muted);
+      }
+
+      .actions {
+        display: flex;
+        gap: 8px;
+      }
+
+      .btn-success {
+        background: #ecfdf5;
+        color: #065f46;
+      }
+
+      .btn-success:hover {
+        background: #d1fae5;
+      }
+
+      .btn-danger {
+        background: #fef2f2;
+        color: #991b1b;
+      }
+
+      .btn-danger:hover {
+        background: #fee2e2;
+      }
+
+      .empty {
+        text-align: center;
+        color: var(--muted);
+        border: 1px dashed var(--border);
+        border-radius: 12px;
+        padding: 20px;
+      }
+
+      .footer {
+        margin-top: 16px;
+        color: var(--muted);
+        font-size: 0.92rem;
+      }
+
+      @media (max-width: 560px) {
+        .add-row {
+          grid-template-columns: 1fr;
+        }
+
+        li {
+          grid-template-columns: 1fr;
+        }
+
+        .actions {
+          justify-content: flex-end;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="app">
+      <h1>📝 To-Do List</h1>
+      <p class="sub">Quản lý công việc theo phong cách Web App hiện đại.</p>
+
+      <section class="add-row">
+        <input id="taskInput" type="text" placeholder="Nhập công việc mới..." maxlength="200" />
+        <button id="addBtn" class="btn-primary">+ Thêm</button>
+      </section>
+
+      <section class="filters">
+        <button class="filter-btn active" data-filter="all">Tất cả</button>
+        <button class="filter-btn" data-filter="active">Chưa xong</button>
+        <button class="filter-btn" data-filter="completed">Đã xong</button>
+      </section>
+
+      <ul id="taskList"></ul>
+      <div id="emptyState" class="empty" hidden>Chưa có công việc nào.</div>
+
+      <div class="footer" id="stats"></div>
+    </main>
+
+    <script>
+      const STORAGE_KEY = "todo-web-app-v1";
+
+      const taskInput = document.getElementById("taskInput");
+      const addBtn = document.getElementById("addBtn");
+      const taskList = document.getElementById("taskList");
+      const emptyState = document.getElementById("emptyState");
+      const filterButtons = [...document.querySelectorAll(".filter-btn")];
+      const stats = document.getElementById("stats");
+
+      let tasks = loadTasks();
+      let currentFilter = "all";
+
+      function loadTasks() {
+        try {
+          const data = localStorage.getItem(STORAGE_KEY);
+          return data ? JSON.parse(data) : [];
+        } catch {
+          return [];
+        }
+      }
+
+      function saveTasks() {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks));
+      }
+
+      function createTask(text) {
+        return {
+          id: Date.now() + Math.floor(Math.random() * 1000),
+          text,
+          completed: false,
+        };
+      }
+
+      function getFilteredTasks() {
+        if (currentFilter === "completed") return tasks.filter((task) => task.completed);
+        if (currentFilter === "active") return tasks.filter((task) => !task.completed);
+        return tasks;
+      }
+
+      function render() {
+        taskList.innerHTML = "";
+        const filteredTasks = getFilteredTasks();
+
+        emptyState.hidden = filteredTasks.length !== 0;
+
+        filteredTasks.forEach((task) => {
+          const li = document.createElement("li");
+
+          const text = document.createElement("div");
+          text.className = `task-text ${task.completed ? "completed" : ""}`;
+          text.textContent = task.text;
+
+          const actions = document.createElement("div");
+          actions.className = "actions";
+
+          const doneBtn = document.createElement("button");
+          doneBtn.className = "btn-success";
+          doneBtn.textContent = task.completed ? "Bỏ hoàn thành" : "Hoàn thành";
+          doneBtn.addEventListener("click", () => toggleTask(task.id));
+
+          const deleteBtn = document.createElement("button");
+          deleteBtn.className = "btn-danger";
+          deleteBtn.textContent = "Xóa";
+          deleteBtn.addEventListener("click", () => deleteTask(task.id));
+
+          actions.append(doneBtn, deleteBtn);
+          li.append(text, actions);
+          taskList.appendChild(li);
+        });
+
+        const doneCount = tasks.filter((t) => t.completed).length;
+        stats.textContent = `Tổng: ${tasks.length} • Hoàn thành: ${doneCount} • Chưa xong: ${tasks.length - doneCount}`;
+      }
+
+      function addTask() {
+        const value = taskInput.value.trim();
+        if (!value) return;
+        tasks.unshift(createTask(value));
+        taskInput.value = "";
+        saveTasks();
+        render();
+      }
+
+      function toggleTask(id) {
+        tasks = tasks.map((task) => (task.id === id ? { ...task, completed: !task.completed } : task));
+        saveTasks();
+        render();
+      }
+
+      function deleteTask(id) {
+        tasks = tasks.filter((task) => task.id !== id);
+        saveTasks();
+        render();
+      }
+
+      addBtn.addEventListener("click", addTask);
+      taskInput.addEventListener("keydown", (event) => {
+        if (event.key === "Enter") addTask();
+      });
+
+      filterButtons.forEach((btn) => {
+        btn.addEventListener("click", () => {
+          currentFilter = btn.dataset.filter;
+          filterButtons.forEach((x) => x.classList.toggle("active", x === btn));
+          render();
+        });
+      });
+
+      render();
+    </script>
+  </body>
+</html>
