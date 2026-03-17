@@ -26,3 +26,19 @@ Sau đó truy cập: `http://localhost:8000`
 - Bắn pháo giấy (confetti) khi hoàn thành 100% danh sách (có ít nhất 1 việc).
 - Chuyển đổi **Light/Dark Mode**.
 - Lưu toàn bộ trạng thái vào `localStorage` (tasks + theme).
+
+## Ứng dụng Quản lý công việc (To-Do List) CLI
+
+### Chạy chương trình
+
+```bash
+python3 todo_cli.py
+```
+
+### Tính năng
+
+- Thêm công việc mới.
+- Xóa công việc đã hoàn thành.
+- In danh sách việc cần làm.
+- Menu lặp cho đến khi người dùng chọn thoát.
+ main
