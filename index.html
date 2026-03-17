@@ -1,0 +1,668 @@
+<!doctype html>
+<html lang="vi" data-theme="light">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>To-Do List Pro</title>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
+    <style>
+      :root {
+        --bg-gradient: linear-gradient(135deg, #eef2ff, #f8fafc);
+        --card-bg: #ffffff;
+        --text: #0f172a;
+        --muted: #64748b;
+        --border: #e2e8f0;
+        --shadow: 0 18px 40px rgba(15, 23, 42, 0.12);
+        --accent: #4f46e5;
+        --accent-hover: #4338ca;
+        --chip-bg: #eef2ff;
+        --chip-text: #3730a3;
+        --progress-track: #e2e8f0;
+        --progress-fill: linear-gradient(90deg, #22c55e, #16a34a);
+      }
+
+      html[data-theme="dark"] {
+        --bg-gradient: linear-gradient(135deg, #0f172a, #111827);
+        --card-bg: #111827;
+        --text: #e5e7eb;
+        --muted: #9ca3af;
+        --border: #374151;
+        --shadow: 0 18px 40px rgba(0, 0, 0, 0.45);
+        --accent: #6366f1;
+        --accent-hover: #4f46e5;
+        --chip-bg: #1f2937;
+        --chip-text: #c7d2fe;
+        --progress-track: #374151;
+        --progress-fill: linear-gradient(90deg, #34d399, #22c55e);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        font-family: "Inter", "Segoe UI", Roboto, Arial, sans-serif;
+        background: var(--bg-gradient);
+        color: var(--text);
+        min-height: 100vh;
+        display: grid;
+        place-items: center;
+        transition: background 0.35s ease;
+        padding: 24px;
+      }
+
+      .app {
+        width: min(900px, 100%);
+        background: var(--card-bg);
+        border: 1px solid var(--border);
+        border-radius: 22px;
+        box-shadow: var(--shadow);
+        padding: 24px;
+        transition: background 0.35s ease, border-color 0.35s ease;
+      }
+
+      .topbar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 16px;
+        margin-bottom: 16px;
+      }
+
+      h1 {
+        margin: 0;
+        font-size: clamp(1.5rem, 2.5vw, 2rem);
+      }
+
+      .sub {
+        margin: 6px 0 0;
+        color: var(--muted);
+      }
+
+      .theme-switch {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        color: var(--muted);
+        font-size: 0.92rem;
+      }
+
+      .switch {
+        position: relative;
+        width: 56px;
+        height: 30px;
+      }
+
+      .switch input {
+        opacity: 0;
+        width: 0;
+        height: 0;
+      }
+
+      .slider {
+        position: absolute;
+        inset: 0;
+        background: #cbd5e1;
+        border-radius: 999px;
+        cursor: pointer;
+        transition: background 0.25s ease;
+      }
+
+      .slider::before {
+        content: "";
+        position: absolute;
+        width: 24px;
+        height: 24px;
+        left: 3px;
+        top: 3px;
+        border-radius: 50%;
+        background: white;
+        transition: transform 0.25s ease;
+      }
+
+      .switch input:checked + .slider {
+        background: var(--accent);
+      }
+
+      .switch input:checked + .slider::before {
+        transform: translateX(26px);
+      }
+
+      .progress-wrap {
+        margin: 16px 0;
+      }
+
+      .progress-label {
+        display: flex;
+        justify-content: space-between;
+        color: var(--muted);
+        font-size: 0.92rem;
+        margin-bottom: 8px;
+      }
+
+      .progress-track {
+        width: 100%;
+        height: 12px;
+        background: var(--progress-track);
+        border-radius: 999px;
+        overflow: hidden;
+      }
+
+      .progress-fill {
+        width: 0;
+        height: 100%;
+        background: var(--progress-fill);
+        transition: width 0.35s ease;
+      }
+
+      .add-grid {
+        display: grid;
+        grid-template-columns: 1.2fr 160px 1fr auto;
+        gap: 10px;
+        margin: 18px 0 14px;
+      }
+
+      input,
+      select,
+      button {
+        border-radius: 12px;
+        border: 1px solid var(--border);
+        padding: 11px 12px;
+        font-size: 0.96rem;
+        background: transparent;
+        color: var(--text);
+      }
+
+      input:focus,
+      select:focus {
+        outline: none;
+        border-color: var(--accent);
+        box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.18);
+      }
+
+      button {
+        cursor: pointer;
+        font-weight: 600;
+        transition: transform 0.14s ease, background 0.2s ease;
+      }
+
+      button:hover {
+        transform: translateY(-1px);
+      }
+
+      .btn-primary {
+        background: var(--accent);
+        color: #fff;
+        border: none;
+      }
+
+      .btn-primary:hover {
+        background: var(--accent-hover);
+      }
+
+      .filters {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        margin-bottom: 14px;
+      }
+
+      .filter-btn {
+        background: var(--chip-bg);
+        color: var(--chip-text);
+        border: 1px solid transparent;
+      }
+
+      .filter-btn.active {
+        background: var(--accent);
+        color: white;
+      }
+
+      .list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        display: grid;
+        gap: 10px;
+      }
+
+      .task {
+        border: 1px solid var(--border);
+        border-left: 6px solid transparent;
+        border-radius: 14px;
+        padding: 12px;
+        display: grid;
+        grid-template-columns: 1fr auto;
+        gap: 10px;
+        background: color-mix(in srgb, var(--card-bg) 90%, white 10%);
+      }
+
+      .task.priority-high {
+        border-left-color: #ef4444;
+      }
+
+      .task.priority-medium {
+        border-left-color: #f59e0b;
+      }
+
+      .task.priority-low {
+        border-left-color: #22c55e;
+      }
+
+      .task-title {
+        font-weight: 600;
+        line-height: 1.45;
+      }
+
+      .task-title.completed {
+        text-decoration: line-through;
+        opacity: 0.7;
+      }
+
+      .meta {
+        margin-top: 8px;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+
+      .badge {
+        padding: 4px 8px;
+        border-radius: 999px;
+        font-size: 0.78rem;
+        font-weight: 600;
+      }
+
+      .badge.priority-high {
+        background: #fee2e2;
+        color: #991b1b;
+      }
+
+      .badge.priority-medium {
+        background: #fef3c7;
+        color: #92400e;
+      }
+
+      .badge.priority-low {
+        background: #dcfce7;
+        color: #166534;
+      }
+
+      .badge.tag {
+        background: var(--chip-bg);
+        color: var(--chip-text);
+      }
+
+      .actions {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+      }
+
+      .btn-done {
+        background: #dcfce7;
+        color: #166534;
+        border: none;
+      }
+
+      .btn-delete {
+        background: #fee2e2;
+        color: #991b1b;
+        border: none;
+      }
+
+      .empty {
+        border: 1px dashed var(--border);
+        color: var(--muted);
+        text-align: center;
+        padding: 18px;
+        border-radius: 14px;
+      }
+
+      .stats {
+        margin-top: 14px;
+        color: var(--muted);
+      }
+
+      .task-enter {
+        animation: taskEnter 320ms ease;
+      }
+
+      @keyframes taskEnter {
+        from {
+          opacity: 0;
+          transform: translateY(-10px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      .task-removing {
+        animation: taskRemove 280ms ease forwards;
+      }
+
+      @keyframes taskRemove {
+        from {
+          opacity: 1;
+          transform: translateX(0);
+        }
+        to {
+          opacity: 0;
+          transform: translateX(26px);
+        }
+      }
+
+      @media (max-width: 760px) {
+        .add-grid {
+          grid-template-columns: 1fr 1fr;
+        }
+
+        .add-grid .task-input {
+          grid-column: 1 / -1;
+        }
+
+        .task {
+          grid-template-columns: 1fr;
+        }
+
+        .actions {
+          justify-content: flex-end;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="app">
+      <div class="topbar">
+        <div>
+          <h1>🚀 To-Do List Pro</h1>
+          <p class="sub">Quản lý công việc thông minh với ưu tiên, thẻ tag và thống kê tiến độ.</p>
+        </div>
+        <label class="theme-switch" title="Chuyển sáng/tối">
+          <span>🌙/☀️</span>
+          <span class="switch">
+            <input id="themeToggle" type="checkbox" />
+            <span class="slider"></span>
+          </span>
+        </label>
+      </div>
+
+      <div class="progress-wrap">
+        <div class="progress-label">
+          <span>Tiến độ hôm nay</span>
+          <strong id="progressText">0%</strong>
+        </div>
+        <div class="progress-track">
+          <div id="progressFill" class="progress-fill"></div>
+        </div>
+      </div>
+
+      <section class="add-grid">
+        <input id="taskInput" class="task-input" type="text" placeholder="Nhập công việc mới..." maxlength="220" />
+        <select id="priorityInput" aria-label="Mức độ ưu tiên">
+          <option value="high">🔴 Cao</option>
+          <option value="medium" selected>🟡 Trung bình</option>
+          <option value="low">🟢 Thấp</option>
+        </select>
+        <input id="tagInput" type="text" placeholder="Tag (VD: Học tập)" maxlength="40" />
+        <button id="addBtn" class="btn-primary">+ Thêm</button>
+      </section>
+
+      <section class="filters">
+        <button class="filter-btn active" data-filter="all">Tất cả</button>
+        <button class="filter-btn" data-filter="active">Chưa xong</button>
+        <button class="filter-btn" data-filter="completed">Đã xong</button>
+      </section>
+
+      <ul id="taskList" class="list"></ul>
+      <div id="emptyState" class="empty" hidden>Chưa có công việc nào. Hãy thêm việc đầu tiên!</div>
+      <div id="stats" class="stats"></div>
+    </main>
+
+    <script>
+      const STORAGE_KEY = "todo-web-app-v2";
+      const PRIORITY_RANK = { high: 0, medium: 1, low: 2 };
+      const PRIORITY_LABEL = { high: "🔴 Cao", medium: "🟡 Trung bình", low: "🟢 Thấp" };
+
+      const taskInput = document.getElementById("taskInput");
+      const priorityInput = document.getElementById("priorityInput");
+      const tagInput = document.getElementById("tagInput");
+      const addBtn = document.getElementById("addBtn");
+      const taskList = document.getElementById("taskList");
+      const emptyState = document.getElementById("emptyState");
+      const filterButtons = [...document.querySelectorAll(".filter-btn")];
+      const stats = document.getElementById("stats");
+      const progressFill = document.getElementById("progressFill");
+      const progressText = document.getElementById("progressText");
+      const themeToggle = document.getElementById("themeToggle");
+
+      let state = loadState();
+      let tasks = normalizeTasks(state.tasks || []);
+      let currentFilter = "all";
+      let lastCompletionRatio = getCompletionRatio(tasks);
+      applyTheme(state.theme || "light");
+
+      function loadState() {
+        try {
+          const raw = localStorage.getItem(STORAGE_KEY);
+          return raw ? JSON.parse(raw) : { theme: "light", tasks: [] };
+        } catch {
+          return { theme: "light", tasks: [] };
+        }
+      }
+
+      function saveState() {
+        const payload = {
+          theme: document.documentElement.dataset.theme || "light",
+          tasks,
+        };
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
+      }
+
+      function normalizeTasks(rawTasks) {
+        return rawTasks.map((task) => ({
+          id: task.id || crypto.randomUUID(),
+          text: String(task.text || ""),
+          completed: Boolean(task.completed),
+          priority: ["high", "medium", "low"].includes(task.priority) ? task.priority : "medium",
+          tag: String(task.tag || "").trim(),
+          createdAt: Number(task.createdAt || Date.now()),
+        }));
+      }
+
+      function applyTheme(theme) {
+        const validTheme = theme === "dark" ? "dark" : "light";
+        document.documentElement.dataset.theme = validTheme;
+        themeToggle.checked = validTheme === "dark";
+      }
+
+      function sortTasks(list) {
+        return [...list].sort((a, b) => {
+          if (PRIORITY_RANK[a.priority] !== PRIORITY_RANK[b.priority]) {
+            return PRIORITY_RANK[a.priority] - PRIORITY_RANK[b.priority];
+          }
+          return b.createdAt - a.createdAt;
+        });
+      }
+
+      function getFilteredTasks() {
+        if (currentFilter === "completed") return tasks.filter((task) => task.completed);
+        if (currentFilter === "active") return tasks.filter((task) => !task.completed);
+        return tasks;
+      }
+
+      function getCompletionRatio(list) {
+        if (!list.length) return 0;
+        const done = list.filter((task) => task.completed).length;
+        return done / list.length;
+      }
+
+      function updateProgress() {
+        const ratio = getCompletionRatio(tasks);
+        const percent = Math.round(ratio * 100);
+        progressFill.style.width = `${percent}%`;
+        progressText.textContent = `${percent}%`;
+
+        const total = tasks.length;
+        const done = tasks.filter((task) => task.completed).length;
+        stats.textContent = `Tổng: ${total} • Hoàn thành: ${done} • Chưa xong: ${total - done}`;
+
+        if (total > 0 && ratio === 1 && lastCompletionRatio < 1) {
+          fireConfetti();
+        }
+        lastCompletionRatio = ratio;
+      }
+
+      function fireConfetti() {
+        if (typeof confetti !== "function") return;
+        const duration = 1800;
+        const end = Date.now() + duration;
+        const colors = ["#4f46e5", "#22c55e", "#f59e0b", "#ef4444"];
+
+        (function frame() {
+          confetti({
+            particleCount: 4,
+            angle: 60,
+            spread: 75,
+            origin: { x: 0 },
+            colors,
+          });
+          confetti({
+            particleCount: 4,
+            angle: 120,
+            spread: 75,
+            origin: { x: 1 },
+            colors,
+          });
+
+          if (Date.now() < end) requestAnimationFrame(frame);
+        })();
+      }
+
+      function render(newTaskId = null) {
+        taskList.innerHTML = "";
+        tasks = sortTasks(tasks);
+        const filteredTasks = getFilteredTasks();
+        emptyState.hidden = filteredTasks.length !== 0;
+
+        filteredTasks.forEach((task) => {
+          const li = document.createElement("li");
+          li.className = `task priority-${task.priority}`;
+          li.dataset.id = task.id;
+          if (task.id === newTaskId) li.classList.add("task-enter");
+
+          const left = document.createElement("div");
+
+          const title = document.createElement("div");
+          title.className = `task-title ${task.completed ? "completed" : ""}`;
+          title.textContent = task.text;
+
+          const meta = document.createElement("div");
+          meta.className = "meta";
+
+          const pBadge = document.createElement("span");
+          pBadge.className = `badge priority-${task.priority}`;
+          pBadge.textContent = PRIORITY_LABEL[task.priority];
+
+          const tBadge = document.createElement("span");
+          tBadge.className = "badge tag";
+          tBadge.textContent = `#${task.tag || "Chung"}`;
+
+          meta.append(pBadge, tBadge);
+          left.append(title, meta);
+
+          const actions = document.createElement("div");
+          actions.className = "actions";
+
+          const doneBtn = document.createElement("button");
+          doneBtn.className = "btn-done";
+          doneBtn.textContent = task.completed ? "Bỏ xong" : "Hoàn thành";
+          doneBtn.addEventListener("click", () => toggleTask(task.id));
+
+          const deleteBtn = document.createElement("button");
+          deleteBtn.className = "btn-delete";
+          deleteBtn.textContent = "Xóa";
+          deleteBtn.addEventListener("click", () => removeTaskWithAnimation(task.id));
+
+          actions.append(doneBtn, deleteBtn);
+          li.append(left, actions);
+          taskList.appendChild(li);
+        });
+
+        updateProgress();
+      }
+
+      function addTask() {
+        const text = taskInput.value.trim();
+        const tag = tagInput.value.trim();
+        const priority = priorityInput.value;
+        if (!text) return;
+
+        const task = {
+          id: crypto.randomUUID(),
+          text,
+          completed: false,
+          priority,
+          tag,
+          createdAt: Date.now(),
+        };
+
+        tasks.push(task);
+        taskInput.value = "";
+        tagInput.value = "";
+        saveState();
+        render(task.id);
+      }
+
+      function toggleTask(id) {
+        tasks = tasks.map((task) => (task.id === id ? { ...task, completed: !task.completed } : task));
+        saveState();
+        render();
+      }
+
+      function removeTaskWithAnimation(id) {
+        const node = taskList.querySelector(`[data-id="${id}"]`);
+        if (!node) {
+          tasks = tasks.filter((task) => task.id !== id);
+          saveState();
+          render();
+          return;
+        }
+
+        node.classList.add("task-removing");
+        node.addEventListener(
+          "animationend",
+          () => {
+            tasks = tasks.filter((task) => task.id !== id);
+            saveState();
+            render();
+          },
+          { once: true }
+        );
+      }
+
+      addBtn.addEventListener("click", addTask);
+      taskInput.addEventListener("keydown", (event) => {
+        if (event.key === "Enter") addTask();
+      });
+
+      filterButtons.forEach((btn) => {
+        btn.addEventListener("click", () => {
+          currentFilter = btn.dataset.filter;
+          filterButtons.forEach((x) => x.classList.toggle("active", x === btn));
+          render();
+        });
+      });
+
+      themeToggle.addEventListener("change", () => {
+        applyTheme(themeToggle.checked ? "dark" : "light");
+        saveState();
+      });
+
+      render();
+    </script>
+  </body>
+</html>
